@@ -1,0 +1,9 @@
+# ovo je lista callbacksa koju cemo poslat pl traineru 
+defaults:
+  - tqdm.yaml
+  - learning_rate_monitor.yaml #sends learning rate to logger
+  - model_checkpoint.yaml # pl saves checkpoints to a folder
+  - first_batch_logger.yaml
+  - mlflow_log_checkpoints.yaml #saves pl model checkponts to mlflow
+ #  - masked_logging.yaml
+ 

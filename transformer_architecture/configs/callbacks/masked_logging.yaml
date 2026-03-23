@@ -1,0 +1,4 @@
+masked_logging:
+  _target_: audio_separation.src.models.callbacks.MaskLoggingCallback.MaskLogging
+  log_interval_step: 500
+

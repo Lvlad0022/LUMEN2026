@@ -1,0 +1,9 @@
+_target_: src.model.module.CNNModule
+defaults:
+  - architecture: default
+  - optimizer: adamw
+  - scheduler: cosine
+  - loss: default
+  - _self_
+
+scheduler_frequency: 1

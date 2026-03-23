@@ -1,0 +1,3 @@
+za osobu napisati sve tradeove, to ubacis u encoder, i zelis dobiti iste te outpute, to nekakav encoder decoder
+
+izracunati prosjecnu mjesecnu dobit kupca i izracunati koliko smo ju kao povećali za prezentaciju
