@@ -1,0 +1,6 @@
+
+
+_target_: src.model.architecture.architecture.CNN
+in_channels:  1
+num_classes: 10
+dropout: 0.2

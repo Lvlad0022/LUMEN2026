@@ -1,0 +1,15 @@
+_target_: pytorch_lightning.Trainer
+max_epochs: 50
+reload_dataloaders_every_n_epochs: 1
+limit_val_batches: 400
+default_root_dir: ${paths.run_dir}
+
+accelerator: gpu
+devices: 1
+strategy: auto
+
+gradient_clip_val: 1.0
+precision: 32
+
+# fast_dev_run: True
+
