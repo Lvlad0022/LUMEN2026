@@ -1,0 +1,5 @@
+run:
+  dir: ${paths.run_dir} # deterimnes where hydra saves resolved config
+
+output_subdir: .
+

@@ -1,0 +1,16 @@
+_target_: src.data.datamodule.DigitDatasetModule
+
+# Path to your image data folder. Supports either:
+# 1) data_root_dir/train|val|test/<class_name>/*.png
+# 2) data_root_dir/<class_name>/*.png  (auto split by val_split/test_split)
+data_root_dir: "C:\\Users\\lovro\\Desktop\\hackatoni\\transformer_architecture\\data"
+
+batch_size: 64
+num_workers: 0
+image_size: 28
+val_split: 0.1
+test_split: 0.1
+seed: 42
+pin_memory: true
+augment_train: true
+image_mode: L

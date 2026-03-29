@@ -1,0 +1,26 @@
+[project]
+name = "transformer-architecture"
+version = "0.1.0"
+description = "Transformer recommendation system"
+requires-python = ">=3.11, <3.12"
+dependencies = [
+    "torch==2.3.0+cu121",
+    "torchvision==0.18.0+cu121",
+    "pytorch-lightning==2.3.1",
+    "hydra-core==1.3.2",
+    "omegaconf",
+    "einops==0.8.0",
+    "markupsafe==2.1.5",
+    "numpy>=1.24,<2.0",
+    "pandas",
+    "scikit-learn",
+    "matplotlib",
+    "seaborn",
+    "jupyter",
+    "mlflow>=1.0.0",
+]
+
+[tool.uv]
+package = false
+extra-index-url = ["https://download.pytorch.org/whl/cu121"]
+index-strategy = "first-index"
