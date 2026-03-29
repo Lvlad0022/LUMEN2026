@@ -1,0 +1,11 @@
+encoder:
+  _target_: src.architecture.model.embeddings.default.TokenTimeEmbedding
+  vocab_size: ${data.vocab_size}
+  width: ${model.architecture.d_model}
+  max_seq_len: ${data.seq_len}
+
+decoder:
+  _target_: src.architecture.model.embeddings.default.TokenTimeEmbedding
+  vocab_size: ${data.vocab_size}
+  width: ${model.architecture.d_model}
+  max_seq_len: ${data.seq_len}
