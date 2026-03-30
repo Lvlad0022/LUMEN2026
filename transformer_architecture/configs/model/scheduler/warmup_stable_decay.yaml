@@ -1,6 +1,0 @@
-_target_: src.model.schedulers.learningRateWarmup.WarmupStableDecay
-_partial_: true
-
-warmup_steps: 10000
-stable_steps: 100000
-decay_steps: 20000

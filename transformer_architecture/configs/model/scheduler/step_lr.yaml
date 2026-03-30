@@ -1,4 +1,0 @@
-_target_: torch.optim.lr_sheduler.StepLR
-_partial_: true
-step_size: 10000
-gamma: 0.95
