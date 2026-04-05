@@ -1,0 +1,15 @@
+project:
+  name: classic_methods
+  seed: 42
+
+validation_bool: false
+validation_repetitions: 50
+
+paths:
+  config_path: config/paths.yaml
+
+pipeline:
+  config_path: config/recommendation/pipeline.yaml
+
+validation:
+  config_path: config/validation/validation.yaml

@@ -1,0 +1,18 @@
+_target_: data_processing.preprocessing.Preprocessor
+method: fit_transform
+params:
+  csv_path: ${data.csv_path}
+  drop_price_gt_tx: true
+  drop_missing_customer_id: true
+  drop_missing_item_code: true
+  reindex_items_at_end: true
+  min_num_purchases_per_customer: 50
+  min_num_items_per_customer: 5
+  min_num_purchases_per_item_rows: 50
+  min_num_unique_customers_per_item: 1
+  null_rules:
+    - name: missing_data_rule
+      columns:
+        - Invoiced price
+        - Invoiced price (TX)
+      max_null_fraction: 0.3

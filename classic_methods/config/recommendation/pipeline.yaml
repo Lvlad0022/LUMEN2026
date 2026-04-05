@@ -1,0 +1,22 @@
+data:
+  csv_path: ${paths.data_csv}
+
+output:
+  dir: ${paths.output_dir}
+
+save_intermediates: true
+
+stage1:
+  config_path: config/recommendation/data_processing/preprocessing.yaml
+
+stage2:
+  config_path: config/recommendation/embeddings/function1.yaml
+
+stage3:
+  config_path: config/recommendation/clustering/merge_kmeans.yaml
+
+stage4:
+  config_path: config/recommendation/models/similarity_matrix/from_clusters.yaml
+
+stage5:
+  config_path: config/recommendation/models/similarity_matrix/katz.yaml

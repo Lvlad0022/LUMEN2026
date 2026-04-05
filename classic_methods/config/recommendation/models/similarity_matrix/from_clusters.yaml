@@ -1,0 +1,11 @@
+_target_: models.similarity_matrix.from_clusters.clusters_to_similarity
+method: fit
+params:
+  customer_col: CustomerID
+  item_col: Item Code
+  item_idx_col: item_idx
+  drop_missing_customer_id: true
+  drop_missing_item_code: true
+inputs:
+  dataframe: dataframe
+  clusters: clusters
