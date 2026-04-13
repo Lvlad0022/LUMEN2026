@@ -25,6 +25,11 @@ import pandas as pd
 import scipy.sparse as sp
 
 try:
+    from tqdm.auto import tqdm
+except ImportError:  # pragma: no cover - optional dependency
+    tqdm = None  # type: ignore
+
+try:
     from .pipeline_contracts import (
         ARTIFACT_DATAFRAME,
         ARTIFACT_MAPPING,
@@ -48,7 +53,9 @@ except ImportError:  # pragma: no cover - supports direct imports from src/
     )
 
 
+
 def _load_object(import_path: str) -> Any:
+    # Inputs: dotted import path. Outputs: imported Python attribute.
     """Load a Python object from a dotted import path."""
 
     module_path, _, attr = import_path.rpartition(".")
@@ -59,6 +66,7 @@ def _load_object(import_path: str) -> Any:
 
 
 def _strip_comment(line: str) -> str:
+    # Inputs: raw YAML-like line. Outputs: line with inline comment removed.
     """Remove an inline YAML comment from a line of text."""
 
     if "#" not in line:
@@ -70,6 +78,7 @@ def _strip_comment(line: str) -> str:
 
 
 def _parse_scalar(text: str) -> Any:
+    # Inputs: scalar text. Outputs: parsed Python primitive or string.
     """Parse a YAML scalar into a Python value."""
 
     value = text.strip()
@@ -100,6 +109,7 @@ def _parse_scalar(text: str) -> Any:
 
 
 def _clean_lines(path: Path) -> list[str]:
+    # Inputs: config path. Outputs: cleaned non-empty lines without comments.
     """Read a YAML-like file and remove blank lines plus comments."""
 
     cleaned: list[str] = []
@@ -111,12 +121,14 @@ def _clean_lines(path: Path) -> list[str]:
 
 
 def _indent_of(line: str) -> int:
+    # Inputs: one text line. Outputs: count of leading spaces.
     """Return the leading-space indent of a line."""
 
     return len(line) - len(line.lstrip(" "))
 
 
 def _next_meaningful_indent(lines: list[str], start: int) -> int | None:
+    # Inputs: config lines and start index. Outputs: indent of next non-empty line if present.
     """Find the indent level of the next non-empty line."""
 
     for idx in range(start, len(lines)):
@@ -126,6 +138,7 @@ def _next_meaningful_indent(lines: list[str], start: int) -> int | None:
 
 
 def _parse_mapping(lines: list[str], start: int, indent: int) -> tuple[dict[str, Any], int]:
+    # Inputs: YAML-like lines, start index, indent. Outputs: parsed mapping and next cursor.
     """Parse a YAML-like mapping block."""
 
     result: dict[str, Any] = {}
@@ -162,6 +175,7 @@ def _parse_mapping(lines: list[str], start: int, indent: int) -> tuple[dict[str,
 
 
 def _parse_sequence(lines: list[str], start: int, indent: int) -> tuple[list[Any], int]:
+    # Inputs: YAML-like lines, start index, indent. Outputs: parsed sequence and next cursor.
     """Parse a YAML-like sequence block."""
 
     result: list[Any] = []
@@ -203,6 +217,7 @@ def _parse_sequence(lines: list[str], start: int, indent: int) -> tuple[list[Any
 
 
 def _parse_node(lines: list[str], start: int, indent: int) -> tuple[Any, int]:
+    # Inputs: YAML-like lines, start index, indent. Outputs: parsed node and next cursor.
     """Parse either a mapping or a sequence block."""
 
     next_line = None
@@ -220,6 +235,7 @@ def _parse_node(lines: list[str], start: int, indent: int) -> tuple[Any, int]:
 
 
 def _load_simple_yaml(path: Path) -> dict[str, Any]:
+    # Inputs: config path. Outputs: parsed YAML-like mapping.
     """Load the repo's small YAML subset without requiring PyYAML."""
 
     lines = _clean_lines(path)
@@ -233,10 +249,26 @@ def _load_simple_yaml(path: Path) -> dict[str, Any]:
     return data
 
 
+def _json_ready(value: Any) -> Any:
+    # Inputs: nested Python value. Outputs: JSON-serializable structure.
+    """Convert nested config values into JSON-serializable primitives."""
+
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, dict):
+        return {str(key): _json_ready(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_ready(item) for item in value]
+    if isinstance(value, tuple):
+        return [_json_ready(item) for item in value]
+    return value
+
+
 _PLACEHOLDER_PATTERN = re.compile(r"\$\{([^}]+)\}")
 
 
 def _deep_merge(base: Any, override: Any) -> Any:
+    # Inputs: two nested config values. Outputs: merged structure preferring override.
     """Deep-merge two YAML-like structures, preferring values from ``override``."""
 
     if isinstance(base, dict) and isinstance(override, dict):
@@ -251,6 +283,7 @@ def _deep_merge(base: Any, override: Any) -> Any:
 
 
 def _lookup_path(mapping: Mapping[str, Any], dotted_path: str) -> Any:
+    # Inputs: mapping and dotted path. Outputs: resolved nested value.
     """Look up a dotted path like ``paths.output_dir`` inside a mapping."""
 
     current: Any = mapping
@@ -262,6 +295,7 @@ def _lookup_path(mapping: Mapping[str, Any], dotted_path: str) -> Any:
 
 
 def _resolve_placeholders(value: Any, context: Mapping[str, Any]) -> Any:
+    # Inputs: nested config value and placeholder context. Outputs: value with placeholders resolved.
     """Recursively resolve ``${...}`` placeholders using the provided context."""
 
     if isinstance(value, dict):
@@ -284,6 +318,7 @@ def _resolve_placeholders(value: Any, context: Mapping[str, Any]) -> Any:
 
 
 def _coerce_contract(obj: Any) -> StageContract:
+    # Inputs: stage class or instance. Outputs: normalized stage contract.
     """Normalize class- or instance-level stage contracts."""
 
     contract = getattr(obj, "contract", None)
@@ -315,6 +350,7 @@ def _coerce_contract(obj: Any) -> StageContract:
 
 
 def _resolve_stage_instance(import_path: str, params: dict[str, Any]) -> Any:
+    # Inputs: import path and stage params. Outputs: instantiated stage or callable.
     """Instantiate or return the callable referenced by ``_target_``."""
 
     obj = _load_object(import_path)
@@ -326,6 +362,7 @@ def _resolve_stage_instance(import_path: str, params: dict[str, Any]) -> Any:
 
 
 def _coerce_stage_config(name: str, raw: Mapping[str, Any], config_path: Path) -> StageConfig:
+    # Inputs: stage name, raw config, config path. Outputs: normalized StageConfig.
     """Convert a stage config file into a runtime ``StageConfig`` object."""
 
     import_path = raw.get("_target_", raw.get("target", raw.get("import_path")))
@@ -350,6 +387,7 @@ def _coerce_stage_config(name: str, raw: Mapping[str, Any], config_path: Path) -
 
 
 def _stage_number(name: str) -> int | None:
+    # Inputs: config key name. Outputs: numeric stage suffix when present.
     """Return the numeric suffix for keys named ``stage{number}``."""
 
     match = re.fullmatch(r"stage(\d+)", name)
@@ -375,24 +413,54 @@ class ResolvedStage:
     contract: StageContract
 
 
+def _format_stage_progress_message(index: int, total: int, stage_name: str, *, event: str) -> str:
+    # Inputs: stage position, total stages, stage name, and event label. Outputs: formatted progress line.
+    return f"[pipeline] {event} stage {index}/{total}: {stage_name}"
+
+
+def _iter_progress(iterable: list[Any], *, enabled: bool, description: str) -> Any:
+    # Inputs: iterable, progress flag, and description. Outputs: iterable or tqdm-wrapped iterable.
+    if enabled and tqdm is not None:
+        return tqdm(iterable, desc=description, unit="stage", leave=False)
+    return iterable
+
+
 class Pipeline:
     """Config-driven, compatibility-checked stage pipeline."""
 
-    def __init__(self, config_path: str | Path) -> None:
-        self.config_path = Path(config_path)
-        self.project_dir = self._project_dir_from_config_path(self.config_path)
-        self.root_config = self._load_config(self.config_path)
-        self.paths_config = self._load_config_if_ref(self.root_config.get("paths"))
-        self.pipeline_config = self._load_config_if_ref(self.root_config.get("pipeline"))
-        if not self.paths_config:
-            default_paths_path = self.config_path.parent / "paths.yaml"
-            if default_paths_path.exists():
-                self.paths_config = self._load_config(default_paths_path)
-        self.config_context = _deep_merge(_deep_merge(self.root_config, self.paths_config), self.pipeline_config)
-        self.root_config = _resolve_placeholders(self.root_config, self.config_context)
-        self.paths_config = _resolve_placeholders(self.paths_config, self.config_context)
-        self.pipeline_config = _resolve_placeholders(self.pipeline_config, self.config_context)
-        self.config_context = _deep_merge(_deep_merge(self.root_config, self.paths_config), self.pipeline_config)
+    def __init__(
+        self,
+        config_path: str | Path,
+        *,
+        root_config: dict[str, Any] | None = None,
+        paths_config: dict[str, Any] | None = None,
+        pipeline_config: dict[str, Any] | None = None,
+        project_dir: str | Path | None = None,
+        show_progress: bool = True,
+    ) -> None:
+        # Inputs: config paths/config trees and progress flag. Outputs: initialized validated pipeline.
+        self.config_path = Path(config_path).resolve()
+        self.project_dir = (
+            Path(project_dir).resolve() if project_dir is not None else self._project_dir_from_config_path(self.config_path)
+        )
+        if root_config is None:
+            self.root_config = self._load_config(self.config_path)
+            self.paths_config = self._load_config_if_ref(self.root_config.get("paths"))
+            self.pipeline_config = self._load_config_if_ref(self.root_config.get("pipeline"))
+            if not self.paths_config:
+                default_paths_path = self.config_path.parent / "paths.yaml"
+                if default_paths_path.exists():
+                    self.paths_config = self._load_config(default_paths_path)
+            self.config_context = _deep_merge(_deep_merge(self.root_config, self.paths_config), self.pipeline_config)
+            self.root_config = _resolve_placeholders(self.root_config, self.config_context)
+            self.paths_config = _resolve_placeholders(self.paths_config, self.config_context)
+            self.pipeline_config = _resolve_placeholders(self.pipeline_config, self.config_context)
+            self.config_context = _deep_merge(_deep_merge(self.root_config, self.paths_config), self.pipeline_config)
+        else:
+            self.root_config = dict(root_config)
+            self.paths_config = dict(paths_config or {})
+            self.pipeline_config = dict(pipeline_config or {})
+            self.config_context = _deep_merge(_deep_merge(self.root_config, self.paths_config), self.pipeline_config)
         self.pipeline_root = self.pipeline_config or self.root_config
         self.data_config = dict(self.pipeline_root.get("data", {}) or {})
         self.output_config = dict(self.pipeline_root.get("output", {}) or {})
@@ -405,12 +473,14 @@ class Pipeline:
             self._load_stage_config(stage_ref.name, stage_ref.config_path)
             for stage_ref in self.stage_refs
         ]
+        self.show_progress = bool(show_progress)
         self.artifacts: dict[str, PipelineArtifact] = {}
         self.resolved_stages: list[ResolvedStage] = []
         self.validate()
 
     @staticmethod
     def _load_config(path: Path) -> dict[str, Any]:
+        # Inputs: config path. Outputs: parsed config mapping.
         """Load a root or stage config from disk."""
 
         loaded = _load_simple_yaml(path)
@@ -420,6 +490,7 @@ class Pipeline:
 
     @staticmethod
     def _project_dir_from_config_path(config_path: Path) -> Path:
+        # Inputs: config path. Outputs: inferred project directory.
         """Infer the project directory above the nearest ``config`` folder."""
 
         for parent in config_path.parents:
@@ -428,6 +499,7 @@ class Pipeline:
         return config_path.parent.parent
 
     def _load_config_if_ref(self, section: Any) -> dict[str, Any]:
+        # Inputs: config section. Outputs: inline mapping or loaded referenced config.
         """Load a config file referenced by a section with ``config_path``."""
 
         if not isinstance(section, Mapping):
@@ -442,6 +514,7 @@ class Pipeline:
         return loaded
 
     def _resolve_csv_path(self, data_config: Mapping[str, Any]) -> Path:
+        # Inputs: data config mapping. Outputs: resolved CSV path.
         """Resolve the CSV path declared in the root config."""
 
         csv_path = data_config.get("csv_path", data_config.get("path"))
@@ -453,6 +526,7 @@ class Pipeline:
         return path
 
     def _resolve_output_dir(self, output_config: Mapping[str, Any]) -> Path:
+        # Inputs: output config mapping. Outputs: resolved output directory.
         """Resolve the output directory declared in the root config."""
 
         output_path = output_config.get("dir", output_config.get("path"))
@@ -464,6 +538,7 @@ class Pipeline:
         return path
 
     def _read_dataframe(self, csv_path: Path) -> pd.DataFrame:
+        # Inputs: CSV path. Outputs: loaded dataframe with encoding fallbacks.
         """Read a CSV with a small encoding fallback chain."""
 
         attempts = (
@@ -485,6 +560,7 @@ class Pipeline:
         return pd.read_csv(csv_path)
 
     def _prepare_run_dir(self, output_root: Path) -> Path:
+        # Inputs: output root directory. Outputs: next numbered run directory path.
         """Return the next numbered run directory under ``output_root``."""
 
         output_root.mkdir(parents=True, exist_ok=True)
@@ -500,6 +576,7 @@ class Pipeline:
         return output_root / f"run{next_run}"
 
     def _collect_stage_refs(self, root_config: Mapping[str, Any], base_dir: Path) -> list[StageRef]:
+        # Inputs: root config and base directory. Outputs: ordered stage config references.
         """Collect and validate contiguous ``stage{n}`` references."""
 
         numbered: list[tuple[int, str, Any]] = []
@@ -534,6 +611,7 @@ class Pipeline:
         return refs
 
     def _load_stage_config(self, name: str, path: Path) -> StageConfig:
+        # Inputs: stage name and config path. Outputs: resolved stage config.
         """Load a numbered stage config file."""
 
         raw = self._load_config(path)
@@ -541,6 +619,7 @@ class Pipeline:
         return _coerce_stage_config(name, raw, path)
 
     def validate(self) -> None:
+        # Inputs: none. Outputs: populated resolved stage list after compatibility checks.
         """Validate stage compatibility without running the pipeline."""
 
         self.resolved_stages = []
@@ -602,6 +681,7 @@ class Pipeline:
         return_recommendations: bool = False,
         recommendation_k: int = 10,
     ) -> dict[str, PipelineArtifact]:
+        # Inputs: optional initial artifacts plus runtime flags. Outputs: produced pipeline artifacts.
         """Run the configured pipeline and store intermediate artifacts."""
 
         self.artifacts = {}
@@ -625,9 +705,21 @@ class Pipeline:
                 declared_kind = self._infer_kind(value)
                 self.artifacts[name] = PipelineArtifact(name=name, kind=declared_kind, value=value)
 
-        for resolved in self.resolved_stages:
+        stage_total = len(self.resolved_stages)
+        if self.show_progress:
+            print(f"[pipeline] starting run with {stage_total} stage(s)")
+
+        stage_iterable = _iter_progress(
+            list(enumerate(self.resolved_stages, start=1)),
+            enabled=self.show_progress,
+            description="Pipeline stages",
+        )
+
+        for stage_number, resolved in stage_iterable:
             stage = resolved.instance
             stage_config = resolved.config
+            if self.show_progress:
+                print(_format_stage_progress_message(stage_number, stage_total, stage_config.name, event="starting"))
 
             kwargs: dict[str, Any] = {}
             for input_name, source_name in stage_config.inputs.items():
@@ -673,6 +765,8 @@ class Pipeline:
                         value=value,
                         metadata={"stage": stage_config.name, "alias_of": artifact_name},
                     )
+            if self.show_progress:
+                print(_format_stage_progress_message(stage_number, stage_total, stage_config.name, event="finished"))
 
         if return_recommendations:
             recommendations = self._build_recommendations(recommendation_k)
@@ -685,9 +779,12 @@ class Pipeline:
 
         if should_save_artifacts:
             self._save_artifacts()
+        if self.show_progress:
+            print("[pipeline] run complete")
         return self.artifacts
 
     def _build_recommendations(self, recommendation_k: int) -> dict[int, list[int]]:
+        # Inputs: recommendation cutoff. Outputs: ranked recommendations per customer.
         """Build ranked recommendations for every known customer from the fitted model."""
 
         if recommendation_k <= 0:
@@ -713,6 +810,7 @@ class Pipeline:
         return recommendations
 
     def _save_artifacts(self) -> None:
+        # Inputs: current artifacts. Outputs: persisted canonical artifact files.
         """Persist the canonical artifacts to the configured output directory."""
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -725,10 +823,47 @@ class Pipeline:
             self._save_artifact_value(name, file_path, artifact.value)
             manifest[name] = str(file_path)
 
+        config_bundle_path = self._save_config_bundle(self.output_dir / "config_bundle.json")
+        manifest["config_bundle"] = str(config_bundle_path)
+
         manifest_path = self.output_dir / "manifest.json"
         manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
+    def build_config_bundle(self) -> dict[str, Any]:
+        # Inputs: none. Outputs: serializable resolved pipeline config bundle.
+        """Build a serializable snapshot of the resolved pipeline configuration tree."""
+
+        return {
+            "config_path": str(self.config_path),
+            "project_dir": str(self.project_dir),
+            "csv_path": str(self.csv_path),
+            "output_root": str(self.output_root),
+            "output_dir": str(self.output_dir),
+            "root_config": _json_ready(self.root_config),
+            "paths_config": _json_ready(self.paths_config),
+            "pipeline_config": _json_ready(self.pipeline_config),
+            "stage_configs": [
+                {
+                    "name": stage_config.name,
+                    "config_path": stage_config.config_path,
+                    "import_path": stage_config.import_path,
+                    "method": stage_config.method,
+                    "params": _json_ready(stage_config.params),
+                    "inputs": _json_ready(stage_config.inputs),
+                }
+                for stage_config in self.stage_configs
+            ],
+        }
+
+    def _save_config_bundle(self, path: Path) -> Path:
+        # Inputs: output path. Outputs: written config bundle path.
+        """Persist the resolved pipeline configuration snapshot to disk."""
+
+        path.write_text(json.dumps(self.build_config_bundle(), indent=2), encoding="utf-8")
+        return path
+
     def _artifact_path(self, name: str, value: Any) -> Path:
+        # Inputs: artifact name and value. Outputs: canonical save path.
         """Return the file path used to persist one artifact."""
 
         if name == "dataframe":
@@ -743,7 +878,7 @@ class Pipeline:
             return self.output_dir / "customer_idx.npy"
         if name == "item_idx":
             return self.output_dir / "item_idx.npy"
-        if name in {"user_user_matrix", "user_item_matrix", "similarity_matrix"}:
+        if name in {"user_user_matrix", "user_item_matrix", "combined_matrix", "similarity_matrix"}:
             return self.output_dir / f"{name}.npz"
         if name == "model":
             return self.output_dir / "model.pkl"
@@ -752,6 +887,7 @@ class Pipeline:
         return self.output_dir / f"{name}.bin"
 
     def _save_artifact_value(self, name: str, path: Path, value: Any) -> None:
+        # Inputs: artifact name, path, and value. Outputs: artifact written to disk.
         """Persist a single artifact to disk based on its value type."""
 
         suffix = path.suffix.lower()
@@ -786,6 +922,7 @@ class Pipeline:
 
     @staticmethod
     def _infer_kind(value: Any) -> str:
+        # Inputs: Python value. Outputs: inferred artifact kind string.
         """Infer a coarse artifact kind from a Python object."""
 
         if hasattr(value, "toarray") or hasattr(value, "tocsr"):

@@ -32,6 +32,7 @@ except ImportError:  # pragma: no cover - supports direct imports from src/
 
 
 def _as_array(values: Sequence[Any] | np.ndarray | pd.Series) -> np.ndarray:
+    # Inputs: sequence-like values. Outputs: NumPy array view/copy.
     """Convert a sequence-like object to a NumPy array."""
 
     if isinstance(values, pd.Series):
@@ -40,6 +41,7 @@ def _as_array(values: Sequence[Any] | np.ndarray | pd.Series) -> np.ndarray:
 
 
 def _to_csr(matrix: sp.spmatrix | np.ndarray) -> sp.csr_matrix:
+    # Inputs: sparse or dense matrix. Outputs: CSR sparse matrix.
     """Convert a sparse or dense matrix into CSR format."""
 
     if sp.issparse(matrix):
@@ -102,6 +104,12 @@ class clusters_to_similarity:
             dense=True,
             description="Item ids in the same order as the similarity matrix columns.",
         ),
+        "combined_matrix": ArtifactSpec(
+            name="combined_matrix",
+            kind=ARTIFACT_MATRIX,
+            dense=False,
+            description="Block adjacency matrix combining customer-customer and customer-item relations.",
+        ),
     }
     contract = StageContract(
         input_type=input_type,
@@ -120,6 +128,7 @@ class clusters_to_similarity:
         drop_missing_customer_id: bool = True,
         drop_missing_item_code: bool = True,
     ) -> None:
+        # Inputs: column names and filtering flags. Outputs: initialized cluster similarity builder.
         self.config = ClusterSimilarityConfig(
             customer_col=customer_col,
             item_col=item_col,
@@ -134,12 +143,14 @@ class clusters_to_similarity:
         self.cluster_labels_: np.ndarray | None = None
         self.user_user_matrix_: sp.csr_matrix | None = None
         self.user_item_matrix_: sp.csr_matrix | None = None
+        self.combined_matrix_: sp.csr_matrix | None = None
 
     def fit(
         self,
         dataframe: pd.DataFrame,
         clusters: Sequence[Any] | Mapping[Any, Any] | pd.Series,
     ) -> "clusters_to_similarity":
+        # Inputs: transaction dataframe plus cluster labels. Outputs: fitted relation builder.
         """Fit the constructor and build both similarity matrices."""
 
         if self.config.customer_col not in dataframe.columns:
@@ -192,9 +203,14 @@ class clusters_to_similarity:
             n_customers=len(customer_idx),
             n_items=len(item_idx),
         )
+        self.combined_matrix_ = self._build_combined_matrix(
+            self.user_user_matrix_,
+            self.user_item_matrix_,
+        )
         return self
 
     def export_artifacts(self) -> dict[str, object]:
+        # Inputs: fitted builder state. Outputs: exported matrices and ordering arrays.
         """Export the matrices and ordering arrays for downstream stages."""
 
         if (
@@ -202,6 +218,7 @@ class clusters_to_similarity:
             or self.user_item_matrix_ is None
             or self.customer_idx_ is None
             or self.item_idx_ is None
+            or self.combined_matrix_ is None
         ):
             raise RuntimeError("The stage must be fitted before exporting artifacts.")
         return {
@@ -209,6 +226,7 @@ class clusters_to_similarity:
             "user_item_matrix": self.user_item_matrix_,
             "customer_idx": self.customer_idx_,
             "item_idx": self.item_idx_,
+            "combined_matrix": self.combined_matrix_,
         }
 
     def _align_clusters(
@@ -216,6 +234,7 @@ class clusters_to_similarity:
         customer_idx: np.ndarray,
         clusters: Sequence[Any] | Mapping[Any, Any] | pd.Series,
     ) -> np.ndarray:
+        # Inputs: customer ordering and raw cluster labels. Outputs: cluster labels aligned to customer order.
         """Align cluster labels with the customer ordering used by the dataframe."""
 
         if isinstance(clusters, pd.Series):
@@ -241,6 +260,7 @@ class clusters_to_similarity:
         return cluster_array
 
     def _build_customer_similarity(self, cluster_labels: np.ndarray) -> sp.csr_matrix:
+        # Inputs: aligned cluster labels. Outputs: binary customer-customer similarity matrix.
         """Build a binary customer-customer similarity matrix from cluster labels."""
 
         _, inverse = np.unique(cluster_labels, return_inverse=True)
@@ -264,6 +284,7 @@ class clusters_to_similarity:
         n_customers: int,
         n_items: int,
     ) -> sp.csr_matrix:
+        # Inputs: aligned customer/item positions and matrix sizes. Outputs: sparse customer-item matrix.
         """Build a binary customer-item matrix from observed purchases."""
 
         pairs = np.column_stack([customer_positions, item_positions])
@@ -275,6 +296,19 @@ class clusters_to_similarity:
         return sp.csr_matrix(
             (data, (unique_pairs[:, 0], unique_pairs[:, 1])),
             shape=(n_customers, n_items),
+        )
+
+    def _build_combined_matrix(
+        self,
+        user_user_matrix: sp.csr_matrix,
+        user_item_matrix: sp.csr_matrix,
+    ) -> sp.csr_matrix:
+        # Inputs: customer-customer and customer-item matrices. Outputs: combined block adjacency matrix.
+        n_items = user_item_matrix.shape[1]
+        zero_items = sp.csr_matrix((n_items, n_items), dtype=user_item_matrix.dtype)
+        return sp.bmat(
+            [[user_user_matrix, user_item_matrix], [user_item_matrix.T, zero_items]],
+            format="csr",
         )
 
 

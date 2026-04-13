@@ -1,0 +1,13 @@
+_target_: embeddings.customer_features.CustomerFeatureMatrixBuilder
+method: fit
+params:
+  customer_col: CustomerID
+  item_col: Item Code
+  product_group_col: Product group
+  product_family_col: Product family
+  revenue_col: Invoiced price
+  bucket_size: 5
+  top_n_channel_values: 12
+  min_channel_count: 100
+inputs:
+  df: dataframe

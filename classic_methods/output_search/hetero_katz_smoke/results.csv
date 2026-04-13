@@ -1,0 +1,2 @@
+run_id,summary_path,config_path,repetitions_run,customer_item_weight,item_group_weight,item_family_weight,group_family_weight,beta,ndcg_at_k_mean,ndcg_at_k_std,recall_at_k_mean,recall_at_k_std,mrr_at_k_mean,mrr_at_k_std
+run_0001,C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\output_search\hetero_katz_smoke\run_0001\validation_summary.json,C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\config\search_runtime\hetero_katz_smoke\run_0001\base.yaml,1,0.5,0.25,0.25,0.0,0.0001,0.01781035935540111,0.0,0.05,0.0,0.008333333333333333,0.0

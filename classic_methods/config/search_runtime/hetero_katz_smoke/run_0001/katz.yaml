@@ -1,0 +1,12 @@
+_target_: models.similarity_matrix.katz.KatzRecommender
+method: fit
+params:
+  beta: 0.0001
+  max_iter: 100
+  tol: 1.0e-10
+  include_self: false
+  symmetric_graph_normalization: true
+inputs:
+  combined_matrix: combined_matrix
+  customer_idx: customer_idx
+  item_idx: item_idx

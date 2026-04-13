@@ -1,0 +1,33 @@
+seed: ${project.seed}
+
+data:
+  csv_path: ${paths.processed_data_csv}
+  user_col: CustomerID
+  item_col: item_idx
+  date_col: Order Date
+
+pipeline:
+  recommendation_config_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\config\search_runtime\embedding_distance_katz_search\20260412_185555\run_0011\pipeline.yaml
+  recommendation_k: 10
+
+sampling:
+  users_per_repetition: 20
+
+masking:
+  strategy: last_novel_tail_item
+  tail_fraction: 0.2
+  min_training_customer_support: 3
+
+metrics:
+  k: 10
+
+output:
+  summary_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\output_search\embedding_distance_katz_search\20260412_185555\run_0011\validation_summary.json
+  config_artifact_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\output_search\embedding_distance_katz_search\20260412_185555\run_0011\validation_config_bundle.json
+
+mlflow:
+  enabled: false
+  tracking_uri: null
+  experiment_name: embedding_distance_katz_search
+  run_name: run_0011
+  tags: {}

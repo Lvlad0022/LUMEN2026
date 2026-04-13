@@ -1,0 +1,142 @@
+{
+  "base_config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\search_runtime\\embedding_distance_katz_search\\20260411_210758\\run_0003\\base.yaml",
+  "validation_config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\search_runtime\\embedding_distance_katz_search\\20260411_210758\\run_0003\\validation.yaml",
+  "recommendation_pipeline_config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\search_runtime\\embedding_distance_katz_search\\20260411_210758\\run_0003\\pipeline.yaml",
+  "base_config": {
+    "project": {
+      "name": "classic_methods",
+      "seed": 42
+    },
+    "validation_bool": true,
+    "validation_repetitions": 15,
+    "paths": {
+      "config_path": "config/paths.yaml"
+    },
+    "pipeline": {
+      "config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\search_runtime\\embedding_distance_katz_search\\20260411_210758\\run_0003\\pipeline.yaml"
+    },
+    "validation": {
+      "config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\search_runtime\\embedding_distance_katz_search\\20260411_210758\\run_0003\\validation.yaml"
+    }
+  },
+  "paths_config": {
+    "paths": {
+      "data_csv": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS.csv",
+      "processed_data_csv": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS_processed.csv",
+      "output_dir": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output",
+      "mlflow_dir": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\mlruns"
+    }
+  },
+  "validation_root": {
+    "seed": 42,
+    "data": {
+      "csv_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS_processed.csv",
+      "user_col": "CustomerID",
+      "item_col": "item_idx"
+    },
+    "pipeline": {
+      "recommendation_config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\search_runtime\\embedding_distance_katz_search\\20260411_210758\\run_0003\\pipeline.yaml",
+      "recommendation_k": 10
+    },
+    "sampling": {
+      "users_per_repetition": 20
+    },
+    "masking": {
+      "strategy": "remove_whole_item"
+    },
+    "metrics": {
+      "k": 10
+    },
+    "output": {
+      "summary_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output_search\\embedding_distance_katz_search\\20260411_210758\\run_0003\\validation_summary.json",
+      "config_artifact_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output_search\\embedding_distance_katz_search\\20260411_210758\\run_0003\\validation_config_bundle.json"
+    },
+    "mlflow": {
+      "enabled": false,
+      "tracking_uri": null,
+      "experiment_name": "embedding_distance_katz_search",
+      "run_name": "run_0003",
+      "tags": {}
+    }
+  },
+  "resolved_recommendation_pipeline": {
+    "project": {
+      "name": "classic_methods",
+      "seed": 42
+    },
+    "validation_bool": true,
+    "validation_repetitions": 15,
+    "paths": {
+      "config_path": "config/paths.yaml",
+      "data_csv": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS.csv",
+      "processed_data_csv": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS_processed.csv",
+      "output_dir": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output",
+      "mlflow_dir": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\mlruns"
+    },
+    "pipeline": {
+      "config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\search_runtime\\embedding_distance_katz_search\\20260411_210758\\run_0003\\pipeline.yaml"
+    },
+    "validation": {
+      "config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\search_runtime\\embedding_distance_katz_search\\20260411_210758\\run_0003\\validation.yaml"
+    },
+    "data": {
+      "csv_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS_processed.csv"
+    },
+    "output": {
+      "dir": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output_search\\embedding_distance_katz_search\\20260411_210758\\run_0003"
+    },
+    "save_intermediates": false,
+    "stage1": {
+      "config_path": "config/recommendation/data_processing/preprocessing_impute_only.yaml"
+    },
+    "stage2": {
+      "config_path": "config/recommendation/embeddings/customer_features.yaml"
+    },
+    "stage3": {
+      "config_path": "config/recommendation/embeddings/vae_embedding.yaml"
+    },
+    "stage4": {
+      "config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\search_runtime\\embedding_distance_katz_search\\20260411_210758\\run_0003\\from_embedding_distance.yaml"
+    },
+    "stage5": {
+      "config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\search_runtime\\embedding_distance_katz_search\\20260411_210758\\run_0003\\katz.yaml"
+    }
+  },
+  "resolved_validation_config": {
+    "repetitions": 15,
+    "seed": 42,
+    "users_per_repetition": 20,
+    "recommendation_k": 10,
+    "metrics_k": 10,
+    "source_csv_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS_processed.csv",
+    "recommendation_pipeline_config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\search_runtime\\embedding_distance_katz_search\\20260411_210758\\run_0003\\pipeline.yaml",
+    "summary_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output_search\\embedding_distance_katz_search\\20260411_210758\\run_0003\\validation_summary.json",
+    "config_artifact_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output_search\\embedding_distance_katz_search\\20260411_210758\\run_0003\\validation_config_bundle.json",
+    "mlflow_dir": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\mlruns",
+    "user_col": "CustomerID",
+    "item_col": "item_idx",
+    "masking_strategy": "remove_whole_item",
+    "mlflow_enabled": false,
+    "mlflow_tracking_uri": null,
+    "mlflow_experiment_name": "embedding_distance_katz_search",
+    "mlflow_run_name": "run_0003",
+    "mlflow_tags": null
+  },
+  "summary_excerpt": {
+    "repetitions_run": 15,
+    "metrics": {
+      "ndcg_at_k": {
+        "mean": 0.25346099845261477,
+        "std": 0.08026671024911786
+      },
+      "recall_at_k": {
+        "mean": 0.3566666666666667,
+        "std": 0.10624918300339485
+      },
+      "mrr_at_k": {
+        "mean": 0.22136375661375665,
+        "std": 0.07432957805207428
+      }
+    }
+  }
+}

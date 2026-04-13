@@ -1,9 +1,0 @@
-project:
-  name: classic_methods
-  seed: 42
-
-paths:
-  config_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\config\paths.yaml
-
-pipeline:
-  config_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\config\recommendation\pipeline_validation.yaml

@@ -1,7 +1,0 @@
-_target_: clustering.methods.AdjustedKMeansClustering
-method: fit
-params:
-  k: 4
-  min_size: 20
-inputs:
-  data_points: embedding

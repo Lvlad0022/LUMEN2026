@@ -1,0 +1,142 @@
+{
+  "base_config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\base.yaml",
+  "validation_config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\validation\\validation.yaml",
+  "recommendation_pipeline_config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\recommendation\\pipeline_validation.yaml",
+  "base_config": {
+    "project": {
+      "name": "classic_methods",
+      "seed": 42
+    },
+    "validation_bool": true,
+    "validation_repetitions": 20,
+    "paths": {
+      "config_path": "config/paths.yaml"
+    },
+    "pipeline": {
+      "config_path": "config/recommendation/pipeline_customer_item_group_family_katz.yaml"
+    },
+    "validation": {
+      "config_path": "config/validation/validation.yaml"
+    }
+  },
+  "paths_config": {
+    "paths": {
+      "data_csv": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS.csv",
+      "processed_data_csv": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS_processed.csv",
+      "output_dir": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output",
+      "mlflow_dir": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\mlruns"
+    }
+  },
+  "validation_root": {
+    "seed": 42,
+    "data": {
+      "csv_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS_processed.csv",
+      "user_col": "CustomerID",
+      "item_col": "item_idx"
+    },
+    "pipeline": {
+      "recommendation_config_path": "config/recommendation/pipeline_validation.yaml",
+      "recommendation_k": 10
+    },
+    "sampling": {
+      "users_per_repetition": 20
+    },
+    "masking": {
+      "strategy": "remove_whole_item"
+    },
+    "metrics": {
+      "k": 10
+    },
+    "output": {
+      "summary_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output/validation_summary.json",
+      "config_artifact_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\mlruns/validation_config_bundle.json"
+    },
+    "mlflow": {
+      "enabled": false,
+      "tracking_uri": null,
+      "experiment_name": "classic_methods_validation",
+      "run_name": null,
+      "tags": {}
+    }
+  },
+  "resolved_recommendation_pipeline": {
+    "project": {
+      "name": "classic_methods",
+      "seed": 42
+    },
+    "validation_bool": true,
+    "validation_repetitions": 20,
+    "paths": {
+      "config_path": "config/paths.yaml",
+      "data_csv": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS.csv",
+      "processed_data_csv": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS_processed.csv",
+      "output_dir": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output",
+      "mlflow_dir": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\mlruns"
+    },
+    "pipeline": {
+      "config_path": "config/recommendation/pipeline_customer_item_group_family_katz.yaml"
+    },
+    "validation": {
+      "config_path": "config/validation/validation.yaml"
+    },
+    "data": {
+      "csv_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS_processed.csv"
+    },
+    "output": {
+      "dir": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output"
+    },
+    "save_intermediates": true,
+    "stage1": {
+      "config_path": "config/recommendation/data_processing/preprocessing_impute_only.yaml"
+    },
+    "stage2": {
+      "config_path": "config/recommendation/embeddings/customer_features.yaml"
+    },
+    "stage3": {
+      "config_path": "config/recommendation/embeddings/vae_embedding.yaml"
+    },
+    "stage4": {
+      "config_path": "config/recommendation/models/similarity_matrix/from_embedding_distance.yaml"
+    },
+    "stage5": {
+      "config_path": "config/recommendation/models/similarity_matrix/katz.yaml"
+    }
+  },
+  "resolved_validation_config": {
+    "repetitions": 20,
+    "seed": 42,
+    "users_per_repetition": 20,
+    "recommendation_k": 10,
+    "metrics_k": 10,
+    "source_csv_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS_processed.csv",
+    "recommendation_pipeline_config_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\recommendation\\pipeline_validation.yaml",
+    "summary_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output\\validation_summary.json",
+    "config_artifact_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\mlruns\\validation_config_bundle.json",
+    "mlflow_dir": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\mlruns",
+    "user_col": "CustomerID",
+    "item_col": "item_idx",
+    "masking_strategy": "remove_whole_item",
+    "mlflow_enabled": false,
+    "mlflow_tracking_uri": null,
+    "mlflow_experiment_name": "classic_methods_validation",
+    "mlflow_run_name": null,
+    "mlflow_tags": null
+  },
+  "summary_excerpt": {
+    "repetitions_run": 20,
+    "metrics": {
+      "ndcg_at_k": {
+        "mean": 0.07993509698231346,
+        "std": 0.039504633797212176
+      },
+      "recall_at_k": {
+        "mean": 0.12999999999999998,
+        "std": 0.06964194138592059
+      },
+      "mrr_at_k": {
+        "mean": 0.06470039682539683,
+        "std": 0.03674310573860718
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+_target_: models.similarity_matrix.from_customer_item_group_family.customer_item_group_family_to_similarity
+method: fit
+params:
+  customer_col: CustomerID
+  item_col: Item Code
+  item_idx_col: item_idx
+  group_col: Product group
+  family_col: Product family
+  customer_item_weight: 0.5
+  item_group_weight: 0.25
+  item_family_weight: 0.25
+  group_family_weight: 0.0
+  drop_missing_customer_id: true
+  drop_missing_item_code: true
+  drop_missing_group: true
+  drop_missing_family: true
+inputs:
+  dataframe: dataframe

@@ -66,6 +66,7 @@ Inside each run directory you will find the canonical artifacts and a `manifest.
 The pipeline saves the final canonical artifacts using stable filenames:
 
 - `manifest.json`
+- `config_bundle.json`
 - `dataframe.csv`
 - `idx2item.json`
 - `embedding.npy`
@@ -76,6 +77,14 @@ The pipeline saves the final canonical artifacts using stable filenames:
 - `user_item_matrix.npz`
 - `similarity_matrix.npz`
 - `model.pkl`
+
+Regular pipeline runs save a resolved `config_bundle.json` next to the other canonical artifacts.
+
+Validation runs do not save per-repetition pipeline artifacts. Instead, they write one final summary into the validation output directory and one final `validation_config_bundle.json` into the MLflow/logging directory from `config/paths.yaml`.
+
+Validation no longer creates runtime config folders. Both normal runs and validation resolve the config tree from `config/base.yaml` by following `config_path` references and resolving placeholders.
+
+Validation-only MLflow logging is available through `config/validation/validation.yaml`. When enabled, validation logs the resolved config artifact, summary artifact, aggregate metrics, and configured tags, and defaults its tracking location to `paths.mlflow_dir`.
 
 
 

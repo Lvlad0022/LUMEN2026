@@ -1,0 +1,12 @@
+_target_: embeddings.reductions.VAEEmbeddingReducer
+method: fit
+params:
+  latent_dim: 16
+  hidden_dims: [512, 256, 256, 128]
+  beta: 0.05
+  epochs: 250
+  batch_size: 256
+  learning_rate: 0.001
+  random_state: 42
+inputs:
+  data_points: customer_features

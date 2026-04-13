@@ -1,0 +1,16 @@
+data:
+  csv_path: ${paths.processed_data_csv}
+
+output:
+  dir: ${paths.output_dir}
+
+save_intermediates: true
+
+stage1:
+  config_path: config/recommendation/data_processing/preprocessing_impute_only.yaml
+
+stage2:
+  config_path: config/recommendation/models/similarity_matrix/from_customer_item_group_family.yaml
+
+stage3:
+  config_path: config/validation_runtime_hetero_one_shot/katz_normalized.yaml

@@ -1,5 +1,0 @@
-_target_: embeddings.simple_embeddings.Function1Embedding
-method: fit
-params: {}
-inputs:
-  df: dataframe
