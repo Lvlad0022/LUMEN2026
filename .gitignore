@@ -27,6 +27,7 @@ wheels/
 venv/
 ENV/
 env/
+.venv/
 
 # IDE
 .vscode/
@@ -41,3 +42,6 @@ Thumbs.db
 
 # Jupyter Notebook
 .ipynb_checkpoints/
+
+# Generated outputs
+classic_methods/output/
