@@ -1,0 +1,82 @@
+{
+  "generated_at_utc": "2026-04-11T08:59:13.308096+00:00",
+  "requested_repetitions": 1,
+  "repetitions_run": 1,
+  "seed": 42,
+  "source_csv_path": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN_DS_processed.csv",
+  "masking_strategy": "remove_whole_item",
+  "users_per_repetition": 20,
+  "recommendation_k": 10,
+  "metrics_k": 10,
+  "metrics": {
+    "ndcg_at_k": {
+      "mean": 0.01781035935540111,
+      "std": 0.0
+    },
+    "recall_at_k": {
+      "mean": 0.05,
+      "std": 0.0
+    },
+    "mrr_at_k": {
+      "mean": 0.008333333333333333,
+      "std": 0.0
+    }
+  },
+  "per_user_test_counts": {
+    "2014": 1,
+    "2027": 1,
+    "18869": 1,
+    "18945": 1,
+    "19917": 1,
+    "21107": 1,
+    "21429": 1,
+    "23594": 1,
+    "23643": 1,
+    "23735": 1,
+    "24085": 1,
+    "24814": 1,
+    "35060": 1,
+    "35333": 1,
+    "224053": 1,
+    "230876": 1,
+    "270427": 1,
+    "278845": 1,
+    "283035": 1,
+    "288630": 1
+  },
+  "repetition_results": [
+    {
+      "repetition": 1,
+      "sampled_user_ids": [
+        23594,
+        23735,
+        18945,
+        21107,
+        2014,
+        19917,
+        2027,
+        278845,
+        35333,
+        24085,
+        288630,
+        270427,
+        283035,
+        21429,
+        18869,
+        24814,
+        35060,
+        230876,
+        224053,
+        23643
+      ],
+      "sampled_user_count": 20,
+      "masked_user_count": 20,
+      "evaluated_user_count": 20,
+      "skipped_user_ids": [],
+      "users_missing_predictions": [],
+      "ndcg_at_k": 0.01781035935540111,
+      "recall_at_k": 0.05,
+      "mrr_at_k": 0.008333333333333333
+    }
+  ]
+}

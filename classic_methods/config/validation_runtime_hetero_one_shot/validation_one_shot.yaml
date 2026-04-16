@@ -1,0 +1,30 @@
+seed: ${project.seed}
+
+data:
+  csv_path: ${paths.processed_data_csv}
+  user_col: CustomerID
+  item_col: item_idx
+
+pipeline:
+  recommendation_config_path: config/validation_runtime_hetero_one_shot/pipeline_customer_item_group_family_katz_normalized.yaml
+  recommendation_k: 10
+
+sampling:
+  users_per_repetition: 20
+
+masking:
+  strategy: remove_whole_item
+
+metrics:
+  k: 10
+
+output:
+  summary_path: c:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\output\validation_summary_one_shot_hetero.json
+  config_artifact_path: c:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\mlruns\validation_config_bundle_one_shot_hetero.json
+
+mlflow:
+  enabled: false
+  tracking_uri: null
+  experiment_name: classic_methods_validation_one_shot
+  run_name: null
+  tags: {}

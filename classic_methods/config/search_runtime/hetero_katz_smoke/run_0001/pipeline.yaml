@@ -1,0 +1,16 @@
+data:
+  csv_path: ${paths.processed_data_csv}
+
+output:
+  dir: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\output_search\hetero_katz_smoke\run_0001
+
+save_intermediates: false
+
+stage1:
+  config_path: config/recommendation/data_processing/preprocessing_impute_only.yaml
+
+stage2:
+  config_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\config\search_runtime\hetero_katz_smoke\run_0001\from_customer_item_group_family.yaml
+
+stage3:
+  config_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\config\search_runtime\hetero_katz_smoke\run_0001\katz.yaml

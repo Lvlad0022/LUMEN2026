@@ -1,0 +1,15 @@
+project:
+  name: classic_methods
+  seed: 42
+
+validation_bool: true
+validation_repetitions: 1
+
+paths:
+  config_path: config/paths.yaml
+
+pipeline:
+  config_path: config/validation_runtime_hetero_one_shot/pipeline_customer_item_group_family_katz_normalized.yaml
+
+validation:
+  config_path: config/validation_runtime_hetero_one_shot/validation_one_shot.yaml

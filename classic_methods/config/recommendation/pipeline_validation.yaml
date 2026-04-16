@@ -1,0 +1,22 @@
+data:
+  csv_path: ${paths.processed_data_csv}
+
+output:
+  dir: ${paths.output_dir}
+
+save_intermediates: true
+
+stage1:
+  config_path: config/recommendation/data_processing/preprocessing_impute_only.yaml
+
+stage2:
+  config_path: config/recommendation/embeddings/customer_features.yaml
+
+stage3:
+  config_path: config/recommendation/embeddings/vae_embedding.yaml
+
+stage4:
+  config_path: config/recommendation/models/similarity_matrix/from_embedding_distance.yaml
+
+stage5:
+  config_path: config/recommendation/models/similarity_matrix/katz.yaml
