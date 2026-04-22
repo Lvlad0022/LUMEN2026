@@ -1,3 +1,0 @@
-# saves checkpointed models to mlflow
-mlflow_log_checkpoints:
-  _target_: src.model.callbacks.MLflowCheckpointLogger.MLflowCheckpointLogger
