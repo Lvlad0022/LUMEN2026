@@ -1,5 +1,5 @@
 paths:
-  data_csv: "C:\Users\lovro\Desktop\hackatoni\LUMEN_DS.csv"
-  processed_data_csv: "C:\Users\lovro\Desktop\hackatoni\LUMEN_DS_processed.csv"
-  output_dir: "C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\output"
-  mlflow_dir: "C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\mlruns"
+  data_csv: "C:/Users/dijan/Desktop/LUMEN_DS.csv"
+  processed_data_csv: "C:/Users/dijan/Desktop/LUMEN_DS_processed.csv"
+  output_dir: "C:/Users/dijan/LUMEN2026/classic_methods/output"
+  mlflow_dir: "C:/Users/dijan/LUMEN2026/classic_methods/mlruns"
