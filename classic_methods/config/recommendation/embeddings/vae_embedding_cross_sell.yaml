@@ -1,0 +1,16 @@
+_target_: embeddings.reductions.RecommendationAwareVAEConfig
+loss_variant: cross_sell
+latent_dim: 24
+hidden_dims: [512, 256, 128]
+beta: 0.08
+kl_warmup_epochs: 20
+auxiliary_weight: 1.0
+cross_sell_target_key: cross_sell_product_group_binary
+cross_sell_bce_weight: 1.0
+cross_sell_bpr_weight: 0.15
+cross_sell_negative_samples: 4
+cross_sell_k_values: [5, 10, 20]
+epochs: 250
+batch_size: 256
+learning_rate: 0.001
+random_state: 42

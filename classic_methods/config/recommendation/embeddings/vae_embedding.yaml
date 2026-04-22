@@ -4,9 +4,10 @@ params:
   latent_dim: 16
   hidden_dims: [512, 256, 256, 128]
   beta: 0.05
+  kl_warmup_epochs: 20
   epochs: 250
   batch_size: 256
   learning_rate: 0.001
   random_state: 42
 inputs:
-  data_points: customer_features
+  data_points: dataframe

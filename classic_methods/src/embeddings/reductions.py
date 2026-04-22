@@ -94,7 +94,10 @@ def build_recommendation_targets(feature_df: pd.DataFrame) -> dict[str, np.ndarr
 
     product_group_columns = [column for column in feature_df.columns if column.startswith("share__Product group__")]
     if product_group_columns:
-        targets["product_group_shares"] = feature_df[product_group_columns].fillna(0.0).to_numpy(dtype=np.float32)
+        product_group_shares = feature_df[product_group_columns].fillna(0.0).to_numpy(dtype=np.float32)
+        targets["product_group_shares"] = product_group_shares
+        # Binary proxy target for cross-sell optimization when explicit future-label targets are unavailable.
+        targets["cross_sell_product_group_binary"] = (product_group_shares > 0.0).astype(np.float32)
 
     bucket_share_columns = [column for column in feature_df.columns if column.startswith("bucketshare__")]
     if bucket_share_columns:
@@ -111,6 +114,82 @@ def build_recommendation_targets(feature_df: pd.DataFrame) -> dict[str, np.ndarr
         targets["product_family_shares"] = feature_df[product_family_columns].fillna(0.0).to_numpy(dtype=np.float32)
 
     return targets
+
+
+def evaluate_cross_sell_predictions(
+    scores: np.ndarray,
+    targets_binary: np.ndarray,
+    *,
+    k_values: Iterable[int] = (5, 10, 20),
+    revenue_weights: np.ndarray | None = None,
+) -> pd.DataFrame:
+    # Inputs: model scores and binary relevance targets. Outputs: top-K ranking metrics tailored for cross-sell evaluation.
+    if scores.shape != targets_binary.shape:
+        raise ValueError("scores and targets_binary must share the same shape.")
+
+    metrics_rows: list[dict[str, float]] = []
+    n_rows, n_items = scores.shape
+    if n_rows == 0 or n_items == 0:
+        return pd.DataFrame(columns=["k", "recall", "ndcg", "map", "revenue_weighted_recall"])
+
+    target_binary = (targets_binary > 0.0).astype(np.float32)
+    active_rows = target_binary.sum(axis=1) > 0
+    if not np.any(active_rows):
+        return pd.DataFrame(columns=["k", "recall", "ndcg", "map", "revenue_weighted_recall"])
+
+    if revenue_weights is None:
+        revenue_vector = np.ones(n_items, dtype=np.float32)
+    else:
+        revenue_vector = np.asarray(revenue_weights, dtype=np.float32).reshape(-1)
+        if revenue_vector.shape[0] != n_items:
+            raise ValueError("revenue_weights must have one value per item column.")
+
+    active_scores = scores[active_rows]
+    active_targets = target_binary[active_rows]
+
+    for k_value in k_values:
+        k = max(1, min(int(k_value), n_items))
+        order = np.argsort(-active_scores, axis=1)
+        topk = order[:, :k]
+        topk_hits = np.take_along_axis(active_targets, topk, axis=1)
+
+        positives_per_row = active_targets.sum(axis=1)
+        recall = (topk_hits.sum(axis=1) / positives_per_row).mean()
+
+        discounts = 1.0 / np.log2(np.arange(2, k + 2, dtype=np.float32))
+        dcg = (topk_hits * discounts).sum(axis=1)
+        ideal_counts = np.minimum(positives_per_row.astype(int), k)
+        idcg = np.array([
+            discounts[:count].sum() if count > 0 else 1.0
+            for count in ideal_counts
+        ], dtype=np.float32)
+        ndcg = (dcg / idcg).mean()
+
+        average_precisions: list[float] = []
+        for row_idx in range(topk_hits.shape[0]):
+            hit_row = topk_hits[row_idx]
+            cumulative_hits = np.cumsum(hit_row)
+            precision_at_i = cumulative_hits / (np.arange(k, dtype=np.float32) + 1.0)
+            row_ap = float((precision_at_i * hit_row).sum() / max(1.0, float(min(positives_per_row[row_idx], k))))
+            average_precisions.append(row_ap)
+        map_k = float(np.mean(average_precisions))
+
+        positive_revenue = active_targets * revenue_vector.reshape(1, -1)
+        hit_revenue = np.take_along_axis(positive_revenue, topk, axis=1).sum(axis=1)
+        total_revenue = positive_revenue.sum(axis=1)
+        revenue_weighted_recall = float((hit_revenue / np.maximum(total_revenue, 1e-12)).mean())
+
+        metrics_rows.append(
+            {
+                "k": float(k),
+                "recall": float(recall),
+                "ndcg": float(ndcg),
+                "map": map_k,
+                "revenue_weighted_recall": revenue_weighted_recall,
+            }
+        )
+
+    return pd.DataFrame(metrics_rows)
 
 
 if TORCH_AVAILABLE:
@@ -206,11 +285,48 @@ if TORCH_AVAILABLE:
             return reconstruction, mu, logvar, z, auxiliary_outputs
 
 
+def _resolve_kl_beta(beta: float, epoch: int, kl_warmup_epochs: int) -> float:
+    # Inputs: configured beta, current epoch, and warmup length. Outputs: epoch-specific KL weight.
+    warmup = int(kl_warmup_epochs)
+    if warmup <= 0:
+        return float(beta)
+    progress = min(float(epoch) / float(warmup), 1.0)
+    return float(beta) * progress
+
+
+def _sampled_bpr_loss(
+    logits: torch.Tensor,
+    targets_binary: torch.Tensor,
+    *,
+    negative_samples: int = 4,
+) -> torch.Tensor:
+    # Inputs: logits and binary targets. Outputs: sampled pairwise BPR loss for cross-sell ranking.
+    batch_size, _ = logits.shape
+    losses: list[torch.Tensor] = []
+    for row_idx in range(batch_size):
+        positives = torch.where(targets_binary[row_idx] > 0.5)[0]
+        negatives = torch.where(targets_binary[row_idx] <= 0.5)[0]
+        if positives.numel() == 0 or negatives.numel() == 0:
+            continue
+
+        sample_count = int(min(max(1, negative_samples), positives.numel(), negatives.numel()))
+        positive_choice = positives[torch.randint(0, positives.numel(), (sample_count,), device=logits.device)]
+        negative_choice = negatives[torch.randint(0, negatives.numel(), (sample_count,), device=logits.device)]
+        margin = logits[row_idx, positive_choice] - logits[row_idx, negative_choice]
+        losses.append(-torch.nn.functional.logsigmoid(margin).mean())
+
+    if not losses:
+        return torch.tensor(0.0, device=logits.device)
+    return torch.stack(losses).mean()
+
+
 @dataclass(frozen=True)
 class VAETrainingResult:
     model: Any
     history: pd.DataFrame
     latent_mean: np.ndarray
+    auxiliary_predictions: dict[str, np.ndarray] | None = None
+    metrics: pd.DataFrame | None = None
 
 
 def train_vae(
@@ -219,6 +335,7 @@ def train_vae(
     latent_dim: int = 16,
     hidden_dims: tuple[int, ...] = (256, 128),
     beta: float = 0.05,
+    kl_warmup_epochs: int = 0,
     epochs: int = 80,
     batch_size: int = 256,
     learning_rate: float = 1e-3,
@@ -238,6 +355,7 @@ def train_vae(
     history_rows: list[dict[str, float]] = []
     model.train()
     for epoch in range(1, int(epochs) + 1):
+        beta_weight = _resolve_kl_beta(beta=float(beta), epoch=epoch, kl_warmup_epochs=int(kl_warmup_epochs))
         total_loss = 0.0
         total_recon = 0.0
         total_kl = 0.0
@@ -248,7 +366,7 @@ def train_vae(
             reconstruction, mu, logvar, _ = model(batch)
             recon_loss = nn.functional.mse_loss(reconstruction, batch, reduction="sum")
             kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-            loss = recon_loss + float(beta) * kl_loss
+            loss = recon_loss + beta_weight * kl_loss
             loss.backward()
             optimizer.step()
 
@@ -264,6 +382,7 @@ def train_vae(
                 "loss_per_row": total_loss / total_rows,
                 "recon_per_row": total_recon / total_rows,
                 "kl_per_row": total_kl / total_rows,
+                "kl_beta_weight": beta_weight,
             }
         )
 
@@ -280,6 +399,7 @@ class RecommendationAwareVAEConfig:
     latent_dim: int = 16
     hidden_dims: tuple[int, ...] = (256, 128)
     beta: float = 0.05
+    kl_warmup_epochs: int = 0
     auxiliary_weight: float = 1.0
     bucket_share_weight: float = 1.0
     bucket_magnitude_weight: float = 1.0
@@ -287,6 +407,11 @@ class RecommendationAwareVAEConfig:
     batch_size: int = 256
     learning_rate: float = 1e-3
     random_state: int = 42
+    cross_sell_target_key: str = "cross_sell_product_group_binary"
+    cross_sell_bce_weight: float = 1.0
+    cross_sell_bpr_weight: float = 0.0
+    cross_sell_negative_samples: int = 4
+    cross_sell_k_values: tuple[int, ...] = (5, 10, 20)
 
 
 def train_recommendation_aware_vae(
@@ -307,6 +432,7 @@ def train_recommendation_aware_vae(
             latent_dim=resolved.latent_dim,
             hidden_dims=resolved.hidden_dims,
             beta=resolved.beta,
+            kl_warmup_epochs=resolved.kl_warmup_epochs,
             epochs=resolved.epochs,
             batch_size=resolved.batch_size,
             learning_rate=resolved.learning_rate,
@@ -335,6 +461,11 @@ def train_recommendation_aware_vae(
             "bucket_local_shares": targets["bucket_local_shares"],
             "bucket_magnitudes": targets["bucket_magnitudes"],
         }
+    elif resolved.loss_variant == "cross_sell":
+        key = resolved.cross_sell_target_key
+        if key not in targets:
+            raise ValueError(f"Cross-sell loss requires target key '{key}' in build_recommendation_targets output.")
+        auxiliary_targets = {key: targets[key]}
     else:
         raise ValueError(f"Unsupported loss_variant: {resolved.loss_variant}")
 
@@ -359,6 +490,11 @@ def train_recommendation_aware_vae(
     target_names = list(auxiliary_targets)
     model.train()
     for epoch in range(1, int(resolved.epochs) + 1):
+        beta_weight = _resolve_kl_beta(
+            beta=float(resolved.beta),
+            epoch=epoch,
+            kl_warmup_epochs=int(resolved.kl_warmup_epochs),
+        )
         total_loss = 0.0
         total_recon = 0.0
         total_kl = 0.0
@@ -378,18 +514,33 @@ def train_recommendation_aware_vae(
             kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 
             auxiliary_loss = torch.tensor(0.0, device=device)
+            bpr_loss = torch.tensor(0.0, device=device)
             for name, prediction in auxiliary_outputs.items():
-                base_loss = nn.functional.mse_loss(prediction, batch_targets[name], reduction="sum")
+                if resolved.loss_variant == "cross_sell" and name == resolved.cross_sell_target_key:
+                    base_loss = nn.functional.binary_cross_entropy_with_logits(prediction, batch_targets[name], reduction="sum")
+                else:
+                    base_loss = nn.functional.mse_loss(prediction, batch_targets[name], reduction="sum")
                 weight = float(resolved.auxiliary_weight)
                 if name == "bucket_local_shares":
                     weight *= float(resolved.bucket_share_weight)
                 if name == "bucket_magnitudes":
                     weight *= float(resolved.bucket_magnitude_weight)
+                if resolved.loss_variant == "cross_sell" and name == resolved.cross_sell_target_key:
+                    weight *= float(resolved.cross_sell_bce_weight)
                 weighted_loss = weight * base_loss
                 auxiliary_loss = auxiliary_loss + weighted_loss
                 named_aux_totals[name] += float(weighted_loss.item())
 
-            loss = recon_loss + float(resolved.beta) * kl_loss + auxiliary_loss
+            if resolved.loss_variant == "cross_sell" and resolved.cross_sell_target_key in auxiliary_outputs:
+                ranking_component = _sampled_bpr_loss(
+                    auxiliary_outputs[resolved.cross_sell_target_key],
+                    batch_targets[resolved.cross_sell_target_key],
+                    negative_samples=int(resolved.cross_sell_negative_samples),
+                )
+                bpr_loss = float(resolved.cross_sell_bpr_weight) * ranking_component * float(resolved.auxiliary_weight)
+                named_aux_totals["cross_sell_bpr"] = named_aux_totals.get("cross_sell_bpr", 0.0) + float(bpr_loss.item())
+
+            loss = recon_loss + beta_weight * kl_loss + auxiliary_loss + bpr_loss
             loss.backward()
             optimizer.step()
 
@@ -406,6 +557,7 @@ def train_recommendation_aware_vae(
             "recon_per_row": total_recon / total_rows,
             "kl_per_row": total_kl / total_rows,
             "aux_per_row": total_aux / total_rows,
+            "kl_beta_weight": beta_weight,
         }
         for name, value in named_aux_totals.items():
             history_row[f"{name}_per_row"] = value / total_rows
@@ -413,9 +565,30 @@ def train_recommendation_aware_vae(
 
     model.eval()
     with torch.no_grad():
-        _, mu, _, _, _ = model(x_tensor.to(device))
+        _, mu, _, _, auxiliary_outputs = model(x_tensor.to(device))
         latent_mean = mu.cpu().numpy()
-    return VAETrainingResult(model=model, history=pd.DataFrame(history_rows), latent_mean=latent_mean)
+
+    auxiliary_predictions = {
+        name: prediction.detach().cpu().numpy()
+        for name, prediction in auxiliary_outputs.items()
+    }
+    metrics: pd.DataFrame | None = None
+    if resolved.loss_variant == "cross_sell" and resolved.cross_sell_target_key in auxiliary_predictions:
+        logits = auxiliary_predictions[resolved.cross_sell_target_key]
+        target_values = auxiliary_targets[resolved.cross_sell_target_key]
+        metrics = evaluate_cross_sell_predictions(
+            logits,
+            target_values,
+            k_values=resolved.cross_sell_k_values,
+        )
+
+    return VAETrainingResult(
+        model=model,
+        history=pd.DataFrame(history_rows),
+        latent_mean=latent_mean,
+        auxiliary_predictions=auxiliary_predictions,
+        metrics=metrics,
+    )
 
 
 class PCAReducer:
@@ -466,7 +639,7 @@ class VAEEmbeddingReducer:
     input_type = ARTIFACT_MATRIX
     output_type = ARTIFACT_MATRIX
     input_artifacts = {
-        "data_points": ArtifactSpec(name="data_points", kind=ARTIFACT_MATRIX, dense=True, description="Dense feature matrix.")
+        "data_points": ArtifactSpec(name="data_points", kind="dataframe", dense=True, description="Dense feature matrix.")
     }
     output_artifacts = {
         "embedding": ArtifactSpec(name="embedding", kind=ARTIFACT_MATRIX, dense=True, description="VAE latent-mean embedding.")
@@ -485,6 +658,7 @@ class VAEEmbeddingReducer:
         latent_dim: int = 16,
         hidden_dims: tuple[int, ...] | list[int] = (256, 128),
         beta: float = 0.05,
+        kl_warmup_epochs: int = 0,
         epochs: int = 80,
         batch_size: int = 256,
         learning_rate: float = 1e-3,
@@ -494,6 +668,7 @@ class VAEEmbeddingReducer:
         self.latent_dim = int(latent_dim)
         self.hidden_dims = tuple(int(value) for value in hidden_dims)
         self.beta = float(beta)
+        self.kl_warmup_epochs = int(kl_warmup_epochs)
         self.epochs = int(epochs)
         self.batch_size = int(batch_size)
         self.learning_rate = float(learning_rate)
@@ -502,15 +677,20 @@ class VAEEmbeddingReducer:
         self.history_: pd.DataFrame | None = None
         self.cleaned_feature_frame_: pd.DataFrame | None = None
 
-    def fit(self, data_points: np.ndarray) -> "VAEEmbeddingReducer":
-        # Inputs: dense feature matrix. Outputs: fitted reducer with stored latent-mean embedding.
-        cleaned_feature_frame, matrix, _, _ = preprocess_feature_matrix(pd.DataFrame(data_points))
+    def fit(self, data_points: np.ndarray | pd.DataFrame) -> "VAEEmbeddingReducer":
+        # Inputs: dense feature matrix or dataframe. Outputs: fitted reducer with stored latent-mean embedding.
+        if isinstance(data_points, pd.DataFrame):
+            feature_df = data_points
+        else:
+            feature_df = pd.DataFrame(data_points)
+        cleaned_feature_frame, matrix, _, _ = preprocess_feature_matrix(feature_df)
         self.cleaned_feature_frame_ = cleaned_feature_frame
         result = train_vae(
             matrix,
             latent_dim=self.latent_dim,
             hidden_dims=self.hidden_dims,
             beta=self.beta,
+            kl_warmup_epochs=self.kl_warmup_epochs,
             epochs=self.epochs,
             batch_size=self.batch_size,
             learning_rate=self.learning_rate,
@@ -537,6 +717,7 @@ __all__ = [
     "VAEEmbeddingReducer",
     "VAETrainingResult",
     "build_recommendation_targets",
+    "evaluate_cross_sell_predictions",
     "evaluate_latent_space",
     "fit_pca_embedding",
     "preprocess_feature_matrix",
