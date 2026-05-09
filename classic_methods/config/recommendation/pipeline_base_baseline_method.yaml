@@ -1,0 +1,13 @@
+data:
+  csv_path: ${paths.processed_data_csv}
+
+output:
+  dir: ${paths.output_dir}
+
+save_intermediates: true
+
+stage1:
+  config_path: config/recommendation/data_processing/preprocessing_impute_only.yaml
+
+stage2:
+  config_path: config/recommendation/models/baselines/group_share_popularity.yaml

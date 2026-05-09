@@ -1,0 +1,7 @@
+cohort,source_dataset,cohort_size,validation_users_in_dataset,cumulative_users
+processed_1,LUMEN_DS_processed.csv,339,339,339
+processed_2,LUMEN_DS_processed_2.csv,67,398,406
+processed_3,LUMEN_DS_processed_3.csv,297,690,703
+processed_4,LUMEN_DS_processed_4.csv,148,810,851
+processed_5,LUMEN_DS_processed_5.csv,161,929,1012
+processed_6,LUMEN_DS_processed_6.csv,301,1169,1313

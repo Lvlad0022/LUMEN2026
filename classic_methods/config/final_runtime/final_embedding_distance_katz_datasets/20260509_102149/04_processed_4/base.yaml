@@ -1,0 +1,15 @@
+project:
+  name: classic_methods
+  seed: 42
+
+validation_bool: true
+validation_repetitions: 1
+
+paths:
+  config_path: config/paths.yaml
+
+pipeline:
+  config_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\config\final_runtime\final_embedding_distance_katz_datasets\20260509_102149\04_processed_4\pipeline.yaml
+
+validation:
+  config_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\config\final_runtime\final_embedding_distance_katz_datasets\20260509_102149\04_processed_4\validation.yaml

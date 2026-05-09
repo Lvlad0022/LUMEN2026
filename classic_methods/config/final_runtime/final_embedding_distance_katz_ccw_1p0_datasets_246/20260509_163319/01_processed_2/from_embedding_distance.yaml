@@ -1,0 +1,21 @@
+_target_: models.similarity_matrix.from_embedding_distance.embedding_distance_to_similarity
+method: fit
+params:
+  customer_col: CustomerID
+  item_col: Item Code
+  item_idx_col: item_idx
+  metric: euclidean
+  similarity_kernel: rbf
+  n_neighbors: 1
+  bandwidth: null
+  include_self: true
+  symmetrize: max
+  customer_customer_weight: 1.0
+  customer_item_weight: 1.0
+  normalize_customer_customer: true
+  normalize_customer_item: true
+  drop_missing_customer_id: true
+  drop_missing_item_code: true
+inputs:
+  dataframe: dataframe
+  embedding: embedding

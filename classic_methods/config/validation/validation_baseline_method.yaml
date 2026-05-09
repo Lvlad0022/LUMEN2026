@@ -1,0 +1,34 @@
+seed: ${project.seed}
+
+data:
+  csv_path: ${paths.processed_data_csv}
+  user_col: CustomerID
+  item_col: item_idx
+  date_col: Order Date
+
+pipeline:
+  recommendation_config_path: config/recommendation/pipeline_base_baseline_method.yaml
+  recommendation_k: 20
+
+sampling:
+  users_per_repetition: 20
+
+masking:
+  strategy: last_novel_tail_item
+  tail_fraction: 0.2
+  min_training_customer_support: 3
+
+metrics:
+  k: 10
+
+output:
+  summary_path: ${paths.output_dir}/validation_summary_baseline_method.json
+  config_artifact_path: ${paths.mlflow_dir}/validation_config_bundle_baseline_method.json
+
+mlflow:
+  enabled: false
+  tracking_uri: null
+  experiment_name: classic_methods_validation_baseline_method
+  run_name: null
+  tags:
+    method: group_share_popularity

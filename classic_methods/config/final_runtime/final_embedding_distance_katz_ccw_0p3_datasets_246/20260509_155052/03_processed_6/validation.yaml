@@ -1,0 +1,34 @@
+seed: ${project.seed}
+
+data:
+  csv_path: C:\Users\lovro\Desktop\hackatoni\LUMEN_DS_processed_6.csv
+  user_col: CustomerID
+  item_col: item_idx
+  date_col: Order Date
+
+pipeline:
+  recommendation_config_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\config\final_runtime\final_embedding_distance_katz_ccw_0p3_datasets_246\20260509_155052\03_processed_6\pipeline.yaml
+  recommendation_k: 20
+
+sampling:
+  users_per_repetition: 20
+
+masking:
+  strategy: last_novel_tail_item
+  tail_fraction: 0.2
+  min_training_customer_support: 3
+
+metrics:
+  k: 10
+
+output:
+  summary_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\output_final\final_embedding_distance_katz_ccw_0p3_datasets_246\20260509_155052\03_processed_6\validation_summary.json
+  config_artifact_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\output_final\final_embedding_distance_katz_ccw_0p3_datasets_246\20260509_155052\03_processed_6\validation_config_bundle.json
+
+mlflow:
+  enabled: false
+  tracking_uri: null
+  experiment_name: final_embedding_distance_katz_datasets
+  run_name: processed_6
+  tags:
+    dataset: LUMEN_DS_processed_6.csv

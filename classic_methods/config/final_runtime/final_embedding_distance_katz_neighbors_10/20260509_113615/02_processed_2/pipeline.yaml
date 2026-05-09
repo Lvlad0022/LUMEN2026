@@ -1,0 +1,22 @@
+data:
+  csv_path: C:\Users\lovro\Desktop\hackatoni\LUMEN_DS_processed_2.csv
+
+output:
+  dir: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\output_final\final_embedding_distance_katz_neighbors_10\20260509_113615\02_processed_2
+
+save_intermediates: false
+
+stage1:
+  config_path: config/recommendation/data_processing/preprocessing_impute_only.yaml
+
+stage2:
+  config_path: config/recommendation/embeddings/customer_features.yaml
+
+stage3:
+  config_path: config/recommendation/embeddings/vae_embedding.yaml
+
+stage4:
+  config_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\config\final_runtime\final_embedding_distance_katz_neighbors_10\20260509_113615\02_processed_2\from_embedding_distance.yaml
+
+stage5:
+  config_path: C:\Users\lovro\Desktop\hackatoni\LUMEN2026\classic_methods\config\final_runtime\final_embedding_distance_katz_neighbors_10\20260509_113615\02_processed_2\katz.yaml

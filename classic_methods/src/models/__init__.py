@@ -1,5 +1,10 @@
 """Model utilities."""
 
+from .baselines import (
+    GroupSharePopularityBaseline,
+    GroupSharePopularityConfig,
+    GroupSharePopularityRecommender,
+)
 from .similarity_matrix.from_customer_item_group_family import (
     CustomerItemGroupFamilyConfig,
     CustomerItemGroupFamilyToSimilarity,
@@ -20,6 +25,9 @@ __all__ = [
     "ClustersToSimilarity",
     "EmbeddingDistanceConfig",
     "EmbeddingDistanceToSimilarity",
+    "GroupSharePopularityBaseline",
+    "GroupSharePopularityConfig",
+    "GroupSharePopularityRecommender",
     "KatzConfig",
     "KatzRecommender",
     "customer_item_group_family_to_similarity",

@@ -1,0 +1,16 @@
+_target_: data_processing.preprocessing.Preprocessor
+method: fit_transform
+params:
+  map_item_codes: true
+  impute: false
+  drop_price_gt_tx: false
+  drop_missing_customer_id: true
+  drop_missing_item_code: true
+  reindex_items_at_end: true
+  min_num_purchases_per_customer: null
+  min_num_items_per_customer: null
+  min_num_purchases_per_item_rows: null
+  min_num_unique_customers_per_item: null
+  null_rules: []
+inputs:
+  df: dataframe

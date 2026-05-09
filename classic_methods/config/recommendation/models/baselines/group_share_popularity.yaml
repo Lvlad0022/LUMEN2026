@@ -1,0 +1,13 @@
+_target_: models.baselines.group_share_popularity.GroupSharePopularityRecommender
+method: fit
+params:
+  customer_col: CustomerID
+  item_col: Item Code
+  item_idx_col: item_idx
+  group_col: Product group
+  drop_missing_customer_id: true
+  drop_missing_item: true
+  drop_missing_group: true
+  fallback_to_global_popularity: true
+inputs:
+  dataframe: dataframe

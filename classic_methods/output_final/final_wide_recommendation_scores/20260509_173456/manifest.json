@@ -1,0 +1,17 @@
+{
+  "output_csv": "C:\\Users\\lovro\\Desktop\\hackatoni\\final_recommendation_scores.csv",
+  "runtime_root": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\config\\final_runtime\\final_wide_recommendation_scores\\20260509_173456",
+  "output_root": "C:\\Users\\lovro\\Desktop\\hackatoni\\LUMEN2026\\classic_methods\\output_final\\final_wide_recommendation_scores\\20260509_173456",
+  "row_jsonl": "C:\\Users\\lovro\\AppData\\Local\\Temp\\tmpon6ob6em.jsonl",
+  "item_column_count": 63019,
+  "covered_cohort_customer_count": 1313,
+  "fallback_customer_count": 10901,
+  "hyperparameters": {
+    "n_neighbors": 10,
+    "customer_customer_weight": 0.07,
+    "customer_item_weight": 1.0,
+    "beta": 0.9,
+    "katz_max_nnz_per_row": 1000,
+    "top_k_per_row": 1000
+  }
+}

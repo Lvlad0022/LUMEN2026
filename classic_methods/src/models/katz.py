@@ -67,6 +67,7 @@ class KatzConfig:
     tol: float = 1e-10
     include_self: bool = False
     symmetric_graph_normalization: bool = False
+    max_nnz_per_row: int | None = None
 
 
 class katz_recommender:
@@ -124,6 +125,7 @@ class katz_recommender:
         tol: float = 1e-10,
         include_self: bool = False,
         symmetric_graph_normalization: bool = False,
+        max_nnz_per_row: int | None = None,
     ) -> None:
         self.config = KatzConfig(
             beta=beta,
@@ -131,6 +133,7 @@ class katz_recommender:
             tol=tol,
             include_self=include_self,
             symmetric_graph_normalization=symmetric_graph_normalization,
+            max_nnz_per_row=max_nnz_per_row,
         )
         self.customer_idx_: np.ndarray | None = None
         self.item_idx_: np.ndarray | None = None
@@ -237,8 +240,10 @@ class katz_recommender:
             if factor < self.config.tol:
                 break
             current = matrix @ current
+            current = self._prune_topk_per_row(current, self.config.max_nnz_per_row)
             factor *= beta
             katz = katz + factor * current
+            katz = self._prune_topk_per_row(katz, self.config.max_nnz_per_row)
 
         if self.config.include_self:
             katz = katz + sp.eye(matrix.shape[0], format="csr")
@@ -248,6 +253,51 @@ class katz_recommender:
     def _extract_item_scores(self, katz_matrix: sp.spmatrix, n_customers: int, n_items: int) -> sp.csr_matrix:
         # Inputs: full Katz matrix plus customer/item counts. Outputs: customer-item score block.
         return katz_matrix[:n_customers, n_customers : n_customers + n_items].tocsr()
+
+    @staticmethod
+    def _prune_topk_per_row(matrix: sp.spmatrix, max_nnz_per_row: int | None) -> sp.csr_matrix:
+        # Inputs: sparse score matrix and optional row budget. Outputs: CSR matrix with strongest row entries retained.
+        if max_nnz_per_row is None:
+            return matrix.tocsr()
+        row_budget = int(max_nnz_per_row)
+        if row_budget <= 0:
+            return matrix.tocsr()
+
+        csr = matrix.tocsr()
+        if csr.shape[0] == 0 or csr.nnz == 0:
+            return csr
+
+        indptr = csr.indptr
+        indices = csr.indices
+        data = csr.data
+        new_indptr = [0]
+        new_indices: list[np.ndarray] = []
+        new_data: list[np.ndarray] = []
+
+        for row_idx in range(csr.shape[0]):
+            start = indptr[row_idx]
+            end = indptr[row_idx + 1]
+            row_nnz = end - start
+            if row_nnz <= row_budget:
+                kept_indices = indices[start:end]
+                kept_data = data[start:end]
+            else:
+                row_data = data[start:end]
+                keep_local = np.argpartition(row_data, -row_budget)[-row_budget:]
+                order = np.argsort(indices[start:end][keep_local])
+                keep_local = keep_local[order]
+                kept_indices = indices[start:end][keep_local]
+                kept_data = row_data[keep_local]
+            new_indices.append(kept_indices)
+            new_data.append(kept_data)
+            new_indptr.append(new_indptr[-1] + len(kept_indices))
+
+        pruned_indices = np.concatenate(new_indices) if new_indices else np.asarray([], dtype=indices.dtype)
+        pruned_data = np.concatenate(new_data) if new_data else np.asarray([], dtype=data.dtype)
+        return sp.csr_matrix(
+            (pruned_data, pruned_indices, np.asarray(new_indptr, dtype=indptr.dtype)),
+            shape=csr.shape,
+        )
 
 
 KatzRecommender = katz_recommender

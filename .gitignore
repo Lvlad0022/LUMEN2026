@@ -45,3 +45,5 @@ Thumbs.db
 
 # Generated outputs
 classic_methods/output/
+
+*.pkl
